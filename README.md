@@ -120,6 +120,62 @@ Il tool tenta di correggere automaticamente questi formati:
 - `Qj5` - j non è una colonna valida (solo a-h)
 - `3. Nf3` dopo `1. e4` - numero di mossa non sequenziale
 
+## Performance
+
+Il tool è ottimizzato per gestire file PGN molto grandi:
+- **Velocità**: ~2.4 MB/s (validazione e correzione)
+- **File da 100 MB**: ~42 secondi
+- **File da 1 GB**: ~7 minuti
+- **File da 8 GB**: ~57 minuti
+
+### Benchmark
+
+Per misurare le performance sul tuo sistema, usa gli script di benchmark inclusi:
+
+```bash
+# Windows (PowerShell)
+.\benchmark.ps1                    # Testa i file grandi
+.\benchmark.ps1 -All               # Testa tutti i file in test_files
+.\benchmark.ps1 file.pgn           # Testa un file specifico
+
+# Linux/Mac (Bash)
+./benchmark.sh                     # Testa i file grandi
+./benchmark.sh --all               # Testa tutti i file in test_files
+./benchmark.sh file.pgn            # Testa un file specifico
+```
+
+Gli script di benchmark mostrano:
+- Tempo di validazione e correzione per ogni file
+- Velocità in MB/s
+- Proiezioni per file molto grandi (100MB, 500MB, 1GB, 8GB)
+- Statistiche aggregate
+
+### Ottimizzazioni Implementate
+
+- Buffer di lettura/scrittura da 1MB per I/O efficiente
+- Regex pre-compilate per evitare ricompilazioni
+- Progress bar aggiornata ogni 1000 righe per ridurre overhead
+- Parsing ottimizzato delle mosse e date
+
+## Validazione Batch
+
+Per validare molteplici file PGN in una directory:
+
+```bash
+# Windows (PowerShell)
+.\validate_all.ps1 .\test_files                    # Solo validazione
+.\validate_all.ps1 .\test_files -OutputDir .\fixed  # Valida e correggi
+
+# Linux/Mac (Bash)
+./validate_all.sh ./test_files                     # Solo validazione
+./validate_all.sh ./test_files -o ./fixed          # Valida e correggi
+```
+
+Gli script mostrano:
+- Progresso per ogni file
+- Elenco degli errori e warning trovati
+- Riepilogo finale con conteggio file validi/invalidi
+
 ## Sviluppo
 
 ```bash
@@ -128,6 +184,9 @@ go run . test_files\example_valid.pgn
 
 # Esegui i test (se presenti)
 go test ./...
+
+# Build ottimizzata
+go build -ldflags="-s -w" -o pgn_check.exe
 ```
 
 ## File di Esempio

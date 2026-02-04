@@ -10,6 +10,25 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
+// Pre-compiled regex patterns for better performance
+var (
+	tagPattern          = regexp.MustCompile(`^\[(\w+)\s+"(.*)"\]$`) // Pattern for PGN tags: [TagName "Value"]
+	correctDatePattern  = regexp.MustCompile(`^\d{4}\.\d{2}\.\d{2}$`)
+	wildcardDatePattern = regexp.MustCompile(`^\?{4}\.\?{2}\.\?{2}$`)
+	validMovePattern    = regexp.MustCompile(`^[a-zA-Z0-9\s\+\#\=\-\!\?\(\)\.\*\/\{\}]+$`)
+	movePattern         = regexp.MustCompile(`(\d+)\.\s*([^\s]+)(?:\s+([^\s]+))?`)
+	promotionPattern    = regexp.MustCompile(`^([a-h])?([a-h][1-8])=([QRBN])$`)
+	piecePattern        = regexp.MustCompile(`^([KQRBN])([a-h])?([1-8])?(x)?([a-h][1-8])$`)
+	pawnPattern         = regexp.MustCompile(`^([a-h])(x)?([a-h][1-8])$`)
+	simplePawnPattern   = regexp.MustCompile(`^[a-h][1-8]$`)
+
+	// Date fixing patterns
+	datePatternISO      = regexp.MustCompile(`^(\d{4})-(\d{2})-(\d{2})$`)
+	datePatternDDMMYYYY = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d{4})$`)
+	datePatternYYYYMMDD = regexp.MustCompile(`^(\d{4})/(\d{2})/(\d{2})$`)
+	datePatternNoSep    = regexp.MustCompile(`^(\d{4})(\d{2})(\d{2})$`)
+)
+
 // ValidationError represents a PGN validation error
 type ValidationError struct {
 	Line    int
@@ -72,20 +91,21 @@ func (v *PGNValidator) ValidateFile(filename string) []ValidationError {
 	}
 
 	scanner := bufio.NewScanner(file)
+	// Increase buffer size to 1MB for better performance
+	buf := make([]byte, 1024*1024)
+	scanner.Buffer(buf, 1024*1024)
+
 	lineNumber := 0
 	inHeader := true
 	bytesRead := int64(0)
-
-	// Pattern for PGN tags: [TagName "Value"]
-	tagPattern := regexp.MustCompile(`^\[(\w+)\s+"(.*)"\]$`)
 
 	for scanner.Scan() {
 		lineNumber++
 		line := scanner.Text()
 		bytesRead += int64(len(line)) + 2 // +2 per newline (\r\n su Windows)
 
-		// Aggiorna progress bar ogni 100 linee per migliori performance
-		if bar != nil && lineNumber%100 == 0 {
+		// Update progress bar every 1000 lines for better performance
+		if bar != nil && lineNumber%1000 == 0 {
 			bar.Set64(bytesRead)
 		}
 
@@ -142,13 +162,14 @@ func (v *PGNValidator) validateTag(line string, lineNumber int, pattern *regexp.
 	tagName := matches[1]
 	tagValue := matches[2]
 
-	// Specific validation for Date and EventDate tags
-	if tagName == "Date" || tagName == "EventDate" {
+	// Specific validation for Date and EventDate tags (case-insensitive)
+	tagNameLower := strings.ToLower(tagName)
+	if tagNameLower == "date" || tagNameLower == "eventdate" {
 		v.validateDate(tagValue, lineNumber, line)
 	}
 
-	// Specific validation for Result tag
-	if tagName == "Result" {
+	// Specific validation for Result tag (case-insensitive)
+	if tagNameLower == "result" {
 		v.validateResult(tagValue, lineNumber)
 	}
 }
@@ -157,11 +178,8 @@ func (v *PGNValidator) validateTag(line string, lineNumber int, pattern *regexp.
 func (v *PGNValidator) validateDate(dateValue string, lineNumber int, originalLine string) {
 	// Correct format: YYYY.MM.DD
 	// Acceptable format with wildcards: ????.??.??
-	correctPattern := regexp.MustCompile(`^\d{4}\.\d{2}\.\d{2}$`)
-	wildcardPattern := regexp.MustCompile(`^\?{4}\.\?{2}\.\?{2}$`)
-
 	// If format is already correct, do nothing
-	if correctPattern.MatchString(dateValue) || wildcardPattern.MatchString(dateValue) {
+	if correctDatePattern.MatchString(dateValue) || wildcardDatePattern.MatchString(dateValue) {
 		return
 	}
 
@@ -186,53 +204,24 @@ func (v *PGNValidator) tryFixDate(dateValue string) (string, error) {
 	// Remove spaces
 	dateValue = strings.TrimSpace(dateValue)
 
-	// Try different common formats
-	patterns := []struct {
-		regex   *regexp.Regexp
-		convert func([]string) string
-	}{
-		// YYYY-MM-DD (ISO 8601)
-		{
-			regex: regexp.MustCompile(`^(\d{4})-(\d{2})-(\d{2})$`),
-			convert: func(m []string) string {
-				return fmt.Sprintf("%s.%s.%s", m[1], m[2], m[3])
-			},
-		},
-		// DD/MM/YYYY
-		{
-			regex: regexp.MustCompile(`^(\d{2})/(\d{2})/(\d{4})$`),
-			convert: func(m []string) string {
-				return fmt.Sprintf("%s.%s.%s", m[3], m[2], m[1])
-			},
-		},
-		// MM/DD/YYYY (American format)
-		{
-			regex: regexp.MustCompile(`^(\d{2})/(\d{2})/(\d{4})$`),
-			convert: func(m []string) string {
-				return fmt.Sprintf("%s.%s.%s", m[3], m[1], m[2])
-			},
-		},
-		// YYYY/MM/DD
-		{
-			regex: regexp.MustCompile(`^(\d{4})/(\d{2})/(\d{2})$`),
-			convert: func(m []string) string {
-				return fmt.Sprintf("%s.%s.%s", m[1], m[2], m[3])
-			},
-		},
-		// YYYYMMDD (no separators)
-		{
-			regex: regexp.MustCompile(`^(\d{4})(\d{2})(\d{2})$`),
-			convert: func(m []string) string {
-				return fmt.Sprintf("%s.%s.%s", m[1], m[2], m[3])
-			},
-		},
+	// YYYY-MM-DD (ISO 8601)
+	if matches := datePatternISO.FindStringSubmatch(dateValue); matches != nil {
+		return fmt.Sprintf("%s.%s.%s", matches[1], matches[2], matches[3]), nil
 	}
 
-	for _, p := range patterns {
-		matches := p.regex.FindStringSubmatch(dateValue)
-		if matches != nil {
-			return p.convert(matches), nil
-		}
+	// DD/MM/YYYY or MM/DD/YYYY - assume DD/MM/YYYY for European format
+	if matches := datePatternDDMMYYYY.FindStringSubmatch(dateValue); matches != nil {
+		return fmt.Sprintf("%s.%s.%s", matches[3], matches[2], matches[1]), nil
+	}
+
+	// YYYY/MM/DD
+	if matches := datePatternYYYYMMDD.FindStringSubmatch(dateValue); matches != nil {
+		return fmt.Sprintf("%s.%s.%s", matches[1], matches[2], matches[3]), nil
+	}
+
+	// YYYYMMDD (no separators)
+	if matches := datePatternNoSep.FindStringSubmatch(dateValue); matches != nil {
+		return fmt.Sprintf("%s.%s.%s", matches[1], matches[2], matches[3]), nil
 	}
 
 	return "", fmt.Errorf("cannot correct date format")
@@ -259,8 +248,6 @@ func (v *PGNValidator) validateResult(resultValue string, lineNumber int) {
 func (v *PGNValidator) validateMoves(line string, lineNumber int) {
 	// Basic validation: check that line contains valid characters for moves
 	// Moves can contain: numbers, letters, +, #, =, -, !, ?, spaces, parentheses, braces
-	validMovePattern := regexp.MustCompile(`^[a-zA-Z0-9\s\+\#\=\-\!\?\(\)\.\*\/\{\}]+$`)
-
 	if !validMovePattern.MatchString(line) {
 		v.errors = append(v.errors, ValidationError{
 			Line:    lineNumber,
@@ -323,8 +310,6 @@ func (v *PGNValidator) validateMoveNotation(line string, lineNumber int) {
 
 	// Extract moves and move numbers using regex
 	// Pattern per trovare numeri di mossa e le mosse stesse
-	movePattern := regexp.MustCompile(`(\d+)\.\s*([^\s]+)(?:\s+([^\s]+))?`)
-
 	matches := movePattern.FindAllStringSubmatch(cleanLine, -1)
 
 	expectedMoveNumber := 0
@@ -443,14 +428,12 @@ func (v *PGNValidator) isValidMoveNotation(move string) bool {
 	move = strings.TrimRight(move, "+#")
 
 	// Pattern for promotion (ex: e8=Q)
-	promotionPattern := regexp.MustCompile(`^([a-h])?([a-h][1-8])=([QRBN])$`)
 	if promotionPattern.MatchString(move) {
 		return true
 	}
 
 	// Pattern for moves of pieces with disambiguation
 	// Es: Nbd7, N1c3, Qh4e1, Raxb1
-	piecePattern := regexp.MustCompile(`^([KQRBN])([a-h])?([1-8])?(x)?([a-h][1-8])$`)
 	if piecePattern.MatchString(move) {
 		matches := piecePattern.FindStringSubmatch(move)
 		if len(matches) > 1 {
@@ -464,14 +447,12 @@ func (v *PGNValidator) isValidMoveNotation(move string) bool {
 
 	// Pawn move patterns
 	// Ex: e4, exd5, e8
-	pawnPattern := regexp.MustCompile(`^([a-h])(x)?([a-h][1-8])$`)
 	if pawnPattern.MatchString(move) {
 		return true
 	}
 
 	// Simple pawn move patterns (only destination square)
 	// Ex: e4, d5, a6
-	simplePawnPattern := regexp.MustCompile(`^[a-h][1-8]$`)
 	if simplePawnPattern.MatchString(move) {
 		return true
 	}
@@ -585,21 +566,24 @@ func (v *PGNValidator) WriteCorrectedFile(inputFile, outputFile string) error {
 	}
 
 	scanner := bufio.NewScanner(file)
-	writer := bufio.NewWriter(outFile)
+	// Increase buffer size to 1MB for better performance
+	buf := make([]byte, 1024*1024)
+	scanner.Buffer(buf, 1024*1024)
+
+	// Increase writer buffer size to 1MB
+	writer := bufio.NewWriterSize(outFile, 1024*1024)
 	defer writer.Flush()
 	bytesRead := int64(0)
 	lineCount := 0
 	inHeader := true
-
-	tagPattern := regexp.MustCompile(`^\[(\w+)\s+"(.*)"\]$`)
 
 	for scanner.Scan() {
 		lineCount++
 		line := scanner.Text()
 		bytesRead += int64(len(line)) + 2 // +2 for newline (\r\n on Windows)
 
-		// Update progress bar every 100 lines for better performance
-		if bar != nil && lineCount%100 == 0 {
+		// Update progress bar every 1000 lines for better performance
+		if bar != nil && lineCount%1000 == 0 {
 			bar.Set64(bytesRead)
 		}
 
@@ -613,8 +597,9 @@ func (v *PGNValidator) WriteCorrectedFile(inputFile, outputFile string) error {
 				tagName := matches[1]
 				tagValue := matches[2]
 
-				// Correct Date and EventDate tags if necessary
-				if tagName == "Date" || tagName == "EventDate" {
+				// Correct Date and EventDate tags if necessary (case-insensitive)
+				tagNameLower := strings.ToLower(tagName)
+				if tagNameLower == "date" || tagNameLower == "eventdate" {
 					correctedDate, err := v.tryFixDate(tagValue)
 					if err == nil {
 						// Replace with corrected date
