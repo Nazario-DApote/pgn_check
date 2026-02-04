@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"log"
 )
 
 func main() {
@@ -23,7 +24,7 @@ func main() {
 
 	// Check if file exists
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		fmt.Printf("Error: file '%s' not found\n", filename)
+		log.Fatalf("Error: file '%s' not found\n", filename)
 		os.Exit(1)
 	}
 
@@ -34,7 +35,7 @@ func main() {
 	// If -o specified, save corrected file
 	if *outputFile != "" {
 		if err := validator.WriteCorrectedFile(filename, *outputFile); err != nil {
-			fmt.Printf("Error writing corrected file: %v\n", err)
+			log.Fatalf("Error writing corrected file: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Printf("✓ Corrected file saved to: %s\n", *outputFile)

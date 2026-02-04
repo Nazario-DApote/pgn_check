@@ -285,7 +285,7 @@ func (v *PGNValidator) validateMoves(line string, lineNumber int) {
 	}
 
 	// Check for proper nesting of parentheses and braces
-	if !v.checkProperNesting(line, lineNumber) {
+	if !v.checkProperNesting(line) {
 		v.errors = append(v.errors, ValidationError{
 			Line:    lineNumber,
 			Message: "Warning: Improper nesting of parentheses and braces",
@@ -311,7 +311,7 @@ func (v *PGNValidator) checkBalancedDelimiters(line string, open, close rune) bo
 }
 
 // checkProperNesting verifies that parentheses and braces are properly nested
-func (v *PGNValidator) checkProperNesting(line string, lineNumber int) bool {
+func (v *PGNValidator) checkProperNesting(line string) bool {
 	stack := []rune{}
 
 	for _, char := range line {
