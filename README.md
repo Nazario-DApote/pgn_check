@@ -249,6 +249,14 @@ Il repository include file di esempio nella cartella `test_files/`:
 
 - Go 1.21 o superiore
 
+## Autore
+
+**Nazario D'Apote**
+- Email: nazario.dapote@gmail.com
+- GitHub: [@nazariodapote](https://github.com/nazariodapote)
+
 ## Licenza
 
-MIT
+MIT License - vedi il file [LICENSE](LICENSE) per i dettagli.
+
+Copyright (c) 2026 Nazario D'Apote

@@ -1,3 +1,9 @@
+// PGN Check - A command-line tool for validating PGN (Portable Game Notation) files
+//
+// Author: Nazario D'Apote <nazario.dapote@gmail.com>
+// License: MIT
+// Repository: https://github.com/nazariodapote/pgn_check
+
 package main
 
 import (
@@ -20,6 +26,8 @@ func main() {
 	// Show version if requested
 	if *version || *versionShort {
 		fmt.Printf("pgn_check version %s\n", Version)
+		fmt.Println("Author: Nazario D'Apote <nazario.dapote@gmail.com>")
+		fmt.Println("License: MIT")
 		os.Exit(0)
 	}
 

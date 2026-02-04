@@ -78,11 +78,18 @@ jobs:
         # Copy version file
         Copy-Item VERSION "$ARTIFACT_NAME\"
         
+        # Copy LICENSE file
+        Copy-Item LICENSE "$ARTIFACT_NAME\"
+        
         # Create README for artifact
         "PGN Check - Windows Build" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8
         "Version: $VERSION" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
         "Built: $(Get-Date)" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
         "Platform: Windows x64" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
+        "" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
+        "Author: Nazario D'Apote" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
+        "Email: nazario.dapote@gmail.com" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
+        "License: MIT (see LICENSE file)" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
         "" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
         "Usage:" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
         "  pgn_check.exe <file.pgn>" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
