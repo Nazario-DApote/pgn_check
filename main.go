@@ -7,46 +7,46 @@ import (
 )
 
 func main() {
-	// Definizione flag
-	outputFile := flag.String("o", "", "File di output con le correzioni applicate")
+	// Flag definitions
+	outputFile := flag.String("o", "", "Output file with corrections applied")
 	flag.Parse()
 
-	// Verifica argomenti
+	// Check arguments
 	if flag.NArg() < 1 {
-		fmt.Println("Uso: pgn_check [-o output.pgn] <file.pgn>")
-		fmt.Println("Esempio: pgn_check game.pgn")
+		fmt.Println("Usage: pgn_check [-o output.pgn] <file.pgn>")
+		fmt.Println("Example: pgn_check game.pgn")
 		fmt.Println("         pgn_check -o corrected.pgn game.pgn")
 		os.Exit(1)
 	}
 
 	filename := flag.Arg(0)
 
-	// Controlla se il file esiste
+	// Check if file exists
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		fmt.Printf("Errore: file '%s' non trovato\n", filename)
+		fmt.Printf("Error: file '%s' not found\n", filename)
 		os.Exit(1)
 	}
 
-	// Valida il file PGN
+	// Validate PGN file
 	validator := NewPGNValidator()
 	errors := validator.ValidateFile(filename)
 
-	// Se specificato -o, salva il file corretto
+	// If -o specified, save corrected file
 	if *outputFile != "" {
 		if err := validator.WriteCorrectedFile(filename, *outputFile); err != nil {
-			fmt.Printf("Errore durante la scrittura del file corretto: %v\n", err)
+			fmt.Printf("Error writing corrected file: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("✓ File corretto salvato in: %s\n", *outputFile)
+		fmt.Printf("✓ Corrected file saved to: %s\n", *outputFile)
 	}
 
 	if len(errors) == 0 {
-		fmt.Println("✓ Il file PGN è valido!")
+		fmt.Println("✓ PGN file is valid!")
 		os.Exit(0)
 	}
 
-	// Stampa gli errori trovati
-	fmt.Printf("✗ Trovati %d errori nel file PGN:\n\n", len(errors))
+	// Print found errors
+	fmt.Printf("✗ Found %d errors in PGN file:\n\n", len(errors))
 	for _, err := range errors {
 		fmt.Println(err)
 	}

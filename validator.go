@@ -10,29 +10,29 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-// ValidationError rappresenta un errore di validazione PGN
+// ValidationError represents a PGN validation error
 type ValidationError struct {
 	Line    int
 	Message string
 }
 
 func (e ValidationError) String() string {
-	return fmt.Sprintf("Linea %d: %s", e.Line, e.Message)
+	return fmt.Sprintf("Line %d: %s", e.Line, e.Message)
 }
 
-// PGNValidator gestisce la validazione dei file PGN
+// PGNValidator handles PGN file validation
 type PGNValidator struct {
 	errors []ValidationError
 }
 
-// NewPGNValidator crea una nuova istanza del validatore
+// NewPGNValidator creates a new validator instance
 func NewPGNValidator() *PGNValidator {
 	return &PGNValidator{
 		errors: make([]ValidationError, 0),
 	}
 }
 
-// ValidateFile valida un file PGN e ritorna una lista di errori
+// ValidateFile validates a PGN file and returns a list of errors
 func (v *PGNValidator) ValidateFile(filename string) []ValidationError {
 	v.errors = make([]ValidationError, 0)
 
@@ -40,29 +40,29 @@ func (v *PGNValidator) ValidateFile(filename string) []ValidationError {
 	if err != nil {
 		v.errors = append(v.errors, ValidationError{
 			Line:    0,
-			Message: fmt.Sprintf("Impossibile aprire il file: %v", err),
+			Message: fmt.Sprintf("Cannot open file: %v", err),
 		})
 		return v.errors
 	}
 	defer file.Close()
 
-	// Ottieni la dimensione del file per la progress bar
+	// Get file size for progress bar
 	fileInfo, err := file.Stat()
 	if err != nil {
 		v.errors = append(v.errors, ValidationError{
 			Line:    0,
-			Message: fmt.Sprintf("Impossibile ottenere info sul file: %v", err),
+			Message: fmt.Sprintf("Cannot get file info: %v", err),
 		})
 		return v.errors
 	}
 	fileSize := fileInfo.Size()
 
-	// Crea progress bar solo per file grandi (> 1MB)
+	// Create progress bar only for large files (> 1MB)
 	var bar *progressbar.ProgressBar
 	if fileSize > 1024*1024 {
 		bar = progressbar.NewOptions64(
 			fileSize,
-			progressbar.OptionSetDescription("Validazione in corso"),
+			progressbar.OptionSetDescription("Validating"),
 			progressbar.OptionSetWidth(40),
 			progressbar.OptionShowBytes(true),
 			progressbar.OptionUseIECUnits(false),
@@ -76,7 +76,7 @@ func (v *PGNValidator) ValidateFile(filename string) []ValidationError {
 	inHeader := true
 	bytesRead := int64(0)
 
-	// Pattern per i tag PGN: [TagName "Value"]
+	// Pattern for PGN tags: [TagName "Value"]
 	tagPattern := regexp.MustCompile(`^\[(\w+)\s+"(.*)"\]$`)
 
 	for scanner.Scan() {
@@ -91,21 +91,21 @@ func (v *PGNValidator) ValidateFile(filename string) []ValidationError {
 
 		line = strings.TrimSpace(line)
 
-		// Salta le linee vuote
+		// Skip empty lines
 		if line == "" {
 			continue
 		}
 
-		// Controlla se siamo ancora negli header (tag tra parentesi quadre)
+		// Check if we're still in the header (tags in square brackets)
 		if strings.HasPrefix(line, "[") {
 			inHeader = true
 			v.validateTag(line, lineNumber, tagPattern)
 		} else if inHeader && !strings.HasPrefix(line, "[") {
-			// Prima linea delle mosse, usciamo dagli header
+			// First move line, exiting headers
 			inHeader = false
 			v.validateMoves(line, lineNumber)
 		} else if !inHeader {
-			// Linee successive delle mosse
+			// Subsequent move lines
 			v.validateMoves(line, lineNumber)
 		}
 	}
@@ -113,11 +113,11 @@ func (v *PGNValidator) ValidateFile(filename string) []ValidationError {
 	if err := scanner.Err(); err != nil {
 		v.errors = append(v.errors, ValidationError{
 			Line:    lineNumber,
-			Message: fmt.Sprintf("Errore nella lettura del file: %v", err),
+			Message: fmt.Sprintf("Error reading file: %v", err),
 		})
 	}
 
-	// Completa la progress bar al 100%
+	// Complete progress bar to 100%
 	if bar != nil {
 		bar.Set64(fileSize)
 		bar.Finish()
@@ -127,14 +127,14 @@ func (v *PGNValidator) ValidateFile(filename string) []ValidationError {
 	return v.errors
 }
 
-// validateTag valida un singolo tag PGN
+// validateTag validates a single PGN tag
 func (v *PGNValidator) validateTag(line string, lineNumber int, pattern *regexp.Regexp) {
 	matches := pattern.FindStringSubmatch(line)
 
 	if matches == nil {
 		v.errors = append(v.errors, ValidationError{
 			Line:    lineNumber,
-			Message: fmt.Sprintf("Tag PGN malformato: %s", line),
+			Message: fmt.Sprintf("Malformed PGN tag: %s", line),
 		})
 		return
 	}
@@ -142,51 +142,51 @@ func (v *PGNValidator) validateTag(line string, lineNumber int, pattern *regexp.
 	tagName := matches[1]
 	tagValue := matches[2]
 
-	// Validazione specifica per i tag Date e EventDate
+	// Specific validation for Date and EventDate tags
 	if tagName == "Date" || tagName == "EventDate" {
 		v.validateDate(tagValue, lineNumber, line)
 	}
 
-	// Validazione specifica per il tag Result
+	// Specific validation for Result tag
 	if tagName == "Result" {
 		v.validateResult(tagValue, lineNumber)
 	}
 }
 
-// validateDate valida e tenta di correggere il formato della data
+// validateDate validates and attempts to correct date format
 func (v *PGNValidator) validateDate(dateValue string, lineNumber int, originalLine string) {
-	// Formato corretto: YYYY.MM.DD
-	// Formato accettabile con wildcard: ????.??.??
+	// Correct format: YYYY.MM.DD
+	// Acceptable format with wildcards: ????.??.??
 	correctPattern := regexp.MustCompile(`^\d{4}\.\d{2}\.\d{2}$`)
 	wildcardPattern := regexp.MustCompile(`^\?{4}\.\?{2}\.\?{2}$`)
 
-	// Se il formato è già corretto, non fare nulla
+	// If format is already correct, do nothing
 	if correctPattern.MatchString(dateValue) || wildcardPattern.MatchString(dateValue) {
 		return
 	}
 
-	// Tenta di correggere il formato
+	// Attempt to correct the format
 	correctedDate, err := v.tryFixDate(dateValue)
 
 	if err != nil {
 		v.errors = append(v.errors, ValidationError{
 			Line:    lineNumber,
-			Message: fmt.Sprintf("Formato data non valido: '%s'. Formato richiesto: YYYY.MM.DD (esempio: 2024.01.05)", dateValue),
+			Message: fmt.Sprintf("Invalid date format: '%s'. Required format: YYYY.MM.DD (example: 2024.01.05)", dateValue),
 		})
 	} else {
 		v.errors = append(v.errors, ValidationError{
 			Line:    lineNumber,
-			Message: fmt.Sprintf("Data corretta automaticamente: '%s' → '%s'", dateValue, correctedDate),
+			Message: fmt.Sprintf("Date auto-corrected: '%s' → '%s'", dateValue, correctedDate),
 		})
 	}
 }
 
-// tryFixDate tenta di correggere vari formati di data
+// tryFixDate attempts to correct various date formats
 func (v *PGNValidator) tryFixDate(dateValue string) (string, error) {
-	// Rimuovi spazi
+	// Remove spaces
 	dateValue = strings.TrimSpace(dateValue)
 
-	// Prova diversi formati comuni
+	// Try different common formats
 	patterns := []struct {
 		regex   *regexp.Regexp
 		convert func([]string) string
@@ -205,7 +205,7 @@ func (v *PGNValidator) tryFixDate(dateValue string) (string, error) {
 				return fmt.Sprintf("%s.%s.%s", m[3], m[2], m[1])
 			},
 		},
-		// MM/DD/YYYY (formato americano)
+		// MM/DD/YYYY (American format)
 		{
 			regex: regexp.MustCompile(`^(\d{2})/(\d{2})/(\d{4})$`),
 			convert: func(m []string) string {
@@ -219,7 +219,7 @@ func (v *PGNValidator) tryFixDate(dateValue string) (string, error) {
 				return fmt.Sprintf("%s.%s.%s", m[1], m[2], m[3])
 			},
 		},
-		// YYYYMMDD (senza separatori)
+		// YYYYMMDD (no separators)
 		{
 			regex: regexp.MustCompile(`^(\d{4})(\d{2})(\d{2})$`),
 			convert: func(m []string) string {
@@ -235,69 +235,69 @@ func (v *PGNValidator) tryFixDate(dateValue string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("impossibile correggere il formato della data")
+	return "", fmt.Errorf("cannot correct date format")
 }
 
-// validateResult valida il tag Result
+// validateResult validates the Result tag
 func (v *PGNValidator) validateResult(resultValue string, lineNumber int) {
 	validResults := map[string]bool{
-		"1-0":     true, // Vittoria del Bianco
-		"0-1":     true, // Vittoria del Nero
-		"1/2-1/2": true, // Patta
-		"*":       true, // Partita in corso o risultato sconosciuto
+		"1-0":     true, // White wins
+		"0-1":     true, // Black wins
+		"1/2-1/2": true, // Draw
+		"*":       true, // Game in progress or unknown result
 	}
 
 	if !validResults[resultValue] {
 		v.errors = append(v.errors, ValidationError{
 			Line:    lineNumber,
-			Message: fmt.Sprintf("Risultato non valido: '%s'. Valori ammessi: 1-0, 0-1, 1/2-1/2, *", resultValue),
+			Message: fmt.Sprintf("Invalid result: '%s'. Valid values: 1-0, 0-1, 1/2-1/2, *", resultValue),
 		})
 	}
 }
 
-// validateMoves valida le mosse della partita
+// validateMoves validates game moves
 func (v *PGNValidator) validateMoves(line string, lineNumber int) {
-	// Validazione base: controlla che la linea contenga caratteri validi per le mosse
-	// Le mosse possono contenere: numeri, lettere, +, #, =, -, !, ?, spazi, parentesi
+	// Basic validation: check that line contains valid characters for moves
+	// Moves can contain: numbers, letters, +, #, =, -, !, ?, spaces, parentheses
 	validMovePattern := regexp.MustCompile(`^[\w\s\.\+\#\=\-\!\?\(\)\*\/]+$`)
 
 	if !validMovePattern.MatchString(line) {
 		v.errors = append(v.errors, ValidationError{
 			Line:    lineNumber,
-			Message: "Formato mosse non valido: caratteri non ammessi trovati",
+			Message: "Invalid move format: disallowed characters found",
 		})
 	}
 }
 
-// WriteCorrectedFile legge il file PGN, applica le correzioni e lo scrive nel file di output
+// WriteCorrectedFile reads the PGN file, applies corrections, and writes to output file
 func (v *PGNValidator) WriteCorrectedFile(inputFile, outputFile string) error {
-	// Apri il file di input
+	// Open input file
 	file, err := os.Open(inputFile)
 	if err != nil {
-		return fmt.Errorf("impossibile aprire il file di input: %v", err)
+		return fmt.Errorf("cannot open input file: %v", err)
 	}
 	defer file.Close()
 
-	// Ottieni la dimensione del file per la progress bar
+	// Get file size for progress bar
 	fileInfo, err := file.Stat()
 	if err != nil {
-		return fmt.Errorf("impossibile ottenere info sul file: %v", err)
+		return fmt.Errorf("cannot get file info: %v", err)
 	}
 	fileSize := fileInfo.Size()
 
-	// Crea il file di output
+	// Create output file
 	outFile, err := os.Create(outputFile)
 	if err != nil {
-		return fmt.Errorf("impossibile creare il file di output: %v", err)
+		return fmt.Errorf("cannot create output file: %v", err)
 	}
 	defer outFile.Close()
 
-	// Crea progress bar solo per file grandi (> 1MB)
+	// Create progress bar only for large files (> 1MB)
 	var bar *progressbar.ProgressBar
 	if fileSize > 1024*1024 {
 		bar = progressbar.NewOptions64(
 			fileSize,
-			progressbar.OptionSetDescription("Correzione in corso"),
+			progressbar.OptionSetDescription("Correcting"),
 			progressbar.OptionSetWidth(40),
 			progressbar.OptionShowBytes(true),
 			progressbar.OptionUseIECUnits(false),
@@ -326,35 +326,35 @@ func (v *PGNValidator) WriteCorrectedFile(inputFile, outputFile string) error {
 
 		correctedLine := line
 
-		// Se è un tag, controlla se necessita correzioni
+		// If it's a tag, check if corrections are needed
 		if strings.HasPrefix(strings.TrimSpace(line), "[") {
 			matches := tagPattern.FindStringSubmatch(strings.TrimSpace(line))
 			if matches != nil {
 				tagName := matches[1]
 				tagValue := matches[2]
 
-				// Correggi i tag Date e EventDate se necessario
+				// Correct Date and EventDate tags if necessary
 				if tagName == "Date" || tagName == "EventDate" {
 					correctedDate, err := v.tryFixDate(tagValue)
 					if err == nil {
-						// Sostituisci con la data corretta
+						// Replace with corrected date
 						correctedLine = fmt.Sprintf("[%s \"%s\"]", tagName, correctedDate)
 					}
 				}
 			}
 		}
 
-		// Scrivi la linea (corretta o originale)
+		// Write line (corrected or original)
 		if _, err := writer.WriteString(correctedLine + "\n"); err != nil {
-			return fmt.Errorf("errore durante la scrittura: %v", err)
+			return fmt.Errorf("error writing: %v", err)
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("errore durante la lettura: %v", err)
+		return fmt.Errorf("error reading: %v", err)
 	}
 
-	// Completa la progress bar al 100%
+	// Complete progress bar to 100%
 	if bar != nil {
 		bar.Set64(fileSize)
 		bar.Finish()
