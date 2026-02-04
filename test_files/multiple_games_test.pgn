@@ -1,0 +1,39 @@
+[Event "Game 1 - ISO Date"]
+[Site "Milano"]
+[Date "2024-01-15"]
+[Round "1"]
+[White "Bianchi"]
+[Black "Neri"]
+[Result "1-0"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 1-0
+
+[Event "Game 2 - European Date"]
+[Site "Roma"]
+[Date "15/01/2024"]
+[Round "2"]
+[White "Rossi"]
+[Black "Verdi"]
+[Result "0-1"]
+
+1. d4 d5 2. c4 c6 0-1
+
+[Event "Game 3 - Valid Date"]
+[Site "Torino"]
+[Date "2024.01.15"]
+[Round "3"]
+[White "Gialli"]
+[Black "Blu"]
+[Result "1/2-1/2"]
+
+1. e4 c5 2. Nf3 d6 1/2-1/2
+
+[Event "Game 4 - No Separator"]
+[Site "Napoli"]
+[Date "20240115"]
+[Round "4"]
+[White "Viola"]
+[Black "Arancioni"]
+[Result "*"]
+
+1. d4 Nf6 *

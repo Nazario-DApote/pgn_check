@@ -1,0 +1,39 @@
+# Binari compilati
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+pgn_check
+pgn_check.exe
+
+# File di test e output
+*.test
+*.out
+test_files/*_fixed.pgn
+test_files/*_corrected.pgn
+test_files/corrected.pgn
+*.pgn.bak
+
+# Dipendenze Go
+vendor/
+go.sum
+
+# File IDE e editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# File temporanei
+*.tmp
+*.log
+
+# Coverage
+*.coverprofile
+coverage.html
+test_files/corrected.pgn
+test_files/multiple_games_fixed.pgn
+test_files/test_eventdate_fixed.pgn

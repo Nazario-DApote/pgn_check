@@ -1,0 +1,119 @@
+# PGN Check - Validatore di File PGN
+
+Un tool da linea di comando scritto in Go per validare file PGN (Portable Game Notation) con particolare attenzione al formato delle date.
+
+## Caratteristiche
+
+- ✅ Valida la struttura dei file PGN (singole partite o file multipli)
+- 📅 Controlla il formato delle date nei campi `[Date]` e `[EventDate]` (richiesto: `YYYY.MM.DD`)
+- 🔧 Tenta di correggere automaticamente date mal formattate
+- 📍 Indica il numero di linea esatto degli errori
+- 🎯 Supporta formati di data comuni: ISO 8601, DD/MM/YYYY, MM/DD/YYYY, etc.
+- 💾 Salva file corretti con il flag `-o`
+- 📊 Progress bar per file grandi (> 1MB) per monitorare l'avanzamento
+
+## Installazione
+
+```bash
+# Clona il repository
+cd pgn_check
+
+# Compila il progetto
+go build -o pgn_check.exe
+```
+
+## Utilizzo
+
+```bash
+# Valida un file PGN
+pgn_check.exe test_files\example_valid.pgn
+
+# Output per file valido:
+# ✓ Il file PGN è valido!
+
+# Output per file con errori:
+# ✗ Trovati 1 errori nel file PGN:
+#
+# Linea 3: Data corretta automaticamente: '2024-01-15' → '2024.01.15'
+
+# Valida e salva una versione corretta del file
+pgn_check.exe -o output.pgn test_files\example_invalid_date.pgn
+
+# Output:
+# ✓ File corretto salvato in: output.pgn
+# ✗ Trovati 1 errori nel file PGN:
+#
+# Linea 3: Data corretta automaticamente: '2024-01-15' → '2024.01.15'
+```
+
+## Opzioni
+
+- `-o <file>` : Specifica un file di output dove salvare la versione corretta del PGN
+
+## Formato Data Richiesto
+
+Il formato corretto per il tag Date è: `YYYY.MM.DD`
+
+Esempi:
+- ✅ `[Date "2024.01.05"]` - Formato corretto
+- ✅ `[Date "????.??.??"]` - Formato wildcard (data sconosciuta)
+- ❌ `[Date "2024-01-05"]` - Formato ISO 8601 (viene corretto automaticamente)
+- ❌ `[Date "05/01/2024"]` - Formato europeo (viene corretto se possibile)
+
+## Formati Data Supportati per Correzione Automatica
+
+Il tool tenta di correggere automaticamente questi formati:
+- `YYYY-MM-DD` (ISO 8601)
+- `DD/MM/YYYY` (formato europeo)
+- `MM/DD/YYYY` (formato americano)
+- `YYYY/MM/DD`
+- `YYYYMMDD` (senza separatori)
+
+## Esempio di File PGN Valido
+
+```pgn
+[Event "Example"]
+[Site "?"]
+[Date "2024.01.05"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6
+```
+
+## Validazioni Implementate
+
+1. **Tag PGN**: Verifica che i tag siano nel formato `[TagName "Value"]`
+2. **Date**: Controlla e corregge il formato delle date nei campi `[Date]` e `[EventDate]`
+3. **Result**: Valida i risultati ammessi: `1-0`, `0-1`, `1/2-1/2`, `*`
+4. **Mosse**: Validazione base della sintassi delle mosse
+5. **File Multipli**: Gestisce correttamente file con centinaia di partite
+
+## Sviluppo
+
+```bash
+# Esegui il tool in modalità sviluppo
+go run . test_files\example_valid.pgn
+
+# Esegui i test (se presenti)
+go test ./...
+```
+
+## File di Esempio
+
+Il repository include file di esempio nella cartella `test_files/`:
+- `example_valid.pgn` - File PGN valido
+- `example_invalid_date.pgn` - File con data in formato non corretto
+- `multiple_games_test.pgn` - File con più partite
+- `test_eventdate.pgn` - File con EventDate malformattati
+- `twic1617.pgn` - File reale con centinaia di partite
+
+## Requisiti
+
+- Go 1.21 o superiore
+
+## Licenza
+
+MIT

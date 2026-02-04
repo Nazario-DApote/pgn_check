@@ -1,0 +1,32 @@
+[Event "Test EventDate ISO"]
+[Site "Milano"]
+[Date "2024.01.15"]
+[Round "1"]
+[White "Bianchi"]
+[Black "Neri"]
+[Result "1-0"]
+[EventDate "2024-01-10"]
+
+1. e4 e5 2. Nf3 Nc6 1-0
+
+[Event "Test EventDate European"]
+[Site "Roma"]
+[Date "2024.02.20"]
+[Round "2"]
+[White "Rossi"]
+[Black "Verdi"]
+[Result "0-1"]
+[EventDate "15/02/2024"]
+
+1. d4 d5 2. c4 c6 0-1
+
+[Event "Test Both Dates Wrong"]
+[Site "Torino"]
+[Date "2024-03-25"]
+[Round "3"]
+[White "Gialli"]
+[Black "Blu"]
+[Result "1/2-1/2"]
+[EventDate "20240320"]
+
+1. e4 c5 2. Nf3 d6 1/2-1/2

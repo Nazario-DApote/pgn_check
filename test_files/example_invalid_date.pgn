@@ -1,0 +1,9 @@
+[Event "Test Invalid Date"]
+[Site "Milano"]
+[Date "2024-01-15"]
+[Round "1"]
+[White "Bianchi"]
+[Black "Neri"]
+[Result "1-0"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5
