@@ -174,3 +174,4 @@ if ($results.Count -gt 0) {
 }
 
 Write-Host "Benchmark completed!" -ForegroundColor Green
+exit 0
