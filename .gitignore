@@ -37,3 +37,4 @@ coverage.html
 test_files/corrected.pgn
 test_files/multiple_games_fixed.pgn
 test_files/test_eventdate_fixed.pgn
+*.pgn
