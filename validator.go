@@ -258,8 +258,8 @@ func (v *PGNValidator) validateResult(resultValue string, lineNumber int) {
 // validateMoves validates game moves
 func (v *PGNValidator) validateMoves(line string, lineNumber int) {
 	// Basic validation: check that line contains valid characters for moves
-	// Moves can contain: numbers, letters, +, #, =, -, !, ?, spaces, parentheses
-	validMovePattern := regexp.MustCompile(`^[\w\s\.\+\#\=\-\!\?\(\)\*\/]+$`)
+	// Moves can contain: numbers, letters, +, #, =, -, !, ?, spaces, parentheses, braces
+	validMovePattern := regexp.MustCompile(`^[a-zA-Z0-9\s\+\#\=\-\!\?\(\)\.\*\/\{\}]+$`)
 
 	if !validMovePattern.MatchString(line) {
 		v.errors = append(v.errors, ValidationError{
@@ -267,6 +267,70 @@ func (v *PGNValidator) validateMoves(line string, lineNumber int) {
 			Message: "Invalid move format: disallowed characters found",
 		})
 	}
+
+	// Validate balanced parentheses for variations
+	if !v.checkBalancedDelimiters(line, '(', ')') {
+		v.errors = append(v.errors, ValidationError{
+			Line:    lineNumber,
+			Message: "Warning: Unbalanced parentheses in variations",
+		})
+	}
+
+	// Validate balanced curly braces for comments
+	if !v.checkBalancedDelimiters(line, '{', '}') {
+		v.errors = append(v.errors, ValidationError{
+			Line:    lineNumber,
+			Message: "Warning: Unbalanced curly braces in comments",
+		})
+	}
+
+	// Check for proper nesting of parentheses and braces
+	if !v.checkProperNesting(line, lineNumber) {
+		v.errors = append(v.errors, ValidationError{
+			Line:    lineNumber,
+			Message: "Warning: Improper nesting of parentheses and braces",
+		})
+	}
+}
+
+// checkBalancedDelimiters checks if opening and closing delimiters are balanced
+func (v *PGNValidator) checkBalancedDelimiters(line string, open, close rune) bool {
+	count := 0
+	for _, char := range line {
+		if char == open {
+			count++
+		} else if char == close {
+			count--
+			if count < 0 {
+				return false // Closing delimiter before opening
+			}
+		}
+	}
+	return count == 0 // All delimiters must be closed
+}
+
+// checkProperNesting verifies that parentheses and braces are properly nested
+func (v *PGNValidator) checkProperNesting(line string, lineNumber int) bool {
+	stack := []rune{}
+
+	for _, char := range line {
+		switch char {
+		case '(', '{':
+			stack = append(stack, char)
+		case ')':
+			if len(stack) == 0 || stack[len(stack)-1] != '(' {
+				return false
+			}
+			stack = stack[:len(stack)-1]
+		case '}':
+			if len(stack) == 0 || stack[len(stack)-1] != '{' {
+				return false
+			}
+			stack = stack[:len(stack)-1]
+		}
+	}
+
+	return len(stack) == 0
 }
 
 // WriteCorrectedFile reads the PGN file, applies corrections, and writes to output file
