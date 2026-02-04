@@ -88,8 +88,37 @@ Il tool tenta di correggere automaticamente questi formati:
 1. **Tag PGN**: Verifica che i tag siano nel formato `[TagName "Value"]`
 2. **Date**: Controlla e corregge il formato delle date nei campi `[Date]` e `[EventDate]`
 3. **Result**: Valida i risultati ammessi: `1-0`, `0-1`, `1/2-1/2`, `*`
-4. **Mosse**: Validazione base della sintassi delle mosse
-5. **File Multipli**: Gestisce correttamente file con centinaia di partite
+4. **Mosse**: Validazione completa della notazione delle mosse PGN
+   - Verifica sequenza dei numeri di mossa (1., 2., 3., ecc.)
+   - Valida notazione dei pezzi: K (Re), Q (Regina), R (Torre), B (Alfiere), N (Cavallo)
+   - Valida notazione dei pedoni (solo casella destinazione)
+   - Valida coordinate della scacchiera (a-h per colonne, 1-8 per righe)
+   - Supporta arrocchi: O-O (corto) e O-O-O (lungo)
+   - Supporta promozione pedoni: e8=Q
+   - Supporta scacco (+) e scacco matto (#)
+   - Supporta disambiguazione: Nbd7, N1c3, Raxb1
+   - Supporta annotazioni: !, ?, !!, ??, !?, ?!
+5. **Parentesi e Variazioni**: Controlla bilanciamento di parentesi e parentesi graffe
+6. **File Multipli**: Gestisce correttamente file con centinaia di partite
+
+### Esempi di Validazione Mosse
+
+✅ **Mosse valide:**
+- `e4`, `d5` - mosse di pedone
+- `Nf3`, `Nc6` - mosse di cavallo
+- `O-O`, `O-O-O` - arrocchi
+- `e8=Q` - promozione pedone
+- `Qh5+` - scacco
+- `Qh4#` - scacco matto
+- `Nbd7` - disambiguazione (cavallo da b)
+- `R1c3` - disambiguazione (torre da riga 1)
+- `exd5` - cattura con pedone
+
+❌ **Mosse invalide (vengono segnalate):**
+- `Xe1` - X non è un pezzo valido
+- `b9` - 9 non è una riga valida (solo 1-8)
+- `Qj5` - j non è una colonna valida (solo a-h)
+- `3. Nf3` dopo `1. e4` - numero di mossa non sequenziale
 
 ## Sviluppo
 

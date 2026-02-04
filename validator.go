@@ -291,6 +291,9 @@ func (v *PGNValidator) validateMoves(line string, lineNumber int) {
 			Message: "Warning: Improper nesting of parentheses and braces",
 		})
 	}
+
+	// Validate move notation and move numbers
+	v.validateMoveNotation(line, lineNumber)
 }
 
 // checkBalancedDelimiters checks if opening and closing delimiters are balanced
@@ -308,6 +311,173 @@ func (v *PGNValidator) checkBalancedDelimiters(line string, open, close rune) bo
 		}
 	}
 	return count == 0 // All delimiters must be closed
+}
+
+// validateMoveNotation validates individual move notation and move numbers
+func (v *PGNValidator) validateMoveNotation(line string, lineNumber int) {
+	// Remove comments in curly braces
+	cleanLine := v.removeComments(line)
+
+	// Remove variations in parentheses
+	cleanLine = v.removeVariations(cleanLine)
+
+	// Extract moves and move numbers using regex
+	// Pattern per trovare numeri di mossa e le mosse stesse
+	movePattern := regexp.MustCompile(`(\d+)\.\s*([^\s]+)(?:\s+([^\s]+))?`)
+
+	matches := movePattern.FindAllStringSubmatch(cleanLine, -1)
+
+	expectedMoveNumber := 0
+
+	for _, match := range matches {
+		if len(match) < 3 {
+			continue
+		}
+
+		moveNumberStr := match[1]
+		whiteMove := match[2]
+		blackMove := ""
+		if len(match) > 3 && match[3] != "" {
+			blackMove = match[3]
+		}
+
+		// Parse move number
+		var moveNumber int
+		fmt.Sscanf(moveNumberStr, "%d", &moveNumber)
+
+		// Check sequential move numbers
+		if expectedMoveNumber == 0 {
+			expectedMoveNumber = moveNumber
+		} else {
+			expectedMoveNumber++
+			if moveNumber != expectedMoveNumber {
+				v.errors = append(v.errors, ValidationError{
+					Line:    lineNumber,
+					Message: fmt.Sprintf("Warning: Move number out of sequence. Expected %d, found %d", expectedMoveNumber, moveNumber),
+				})
+				expectedMoveNumber = moveNumber
+			}
+		}
+
+		// Validate white's move
+		if !v.isValidMoveNotation(whiteMove) {
+			v.errors = append(v.errors, ValidationError{
+				Line:    lineNumber,
+				Message: fmt.Sprintf("Warning: Invalid move notation '%s' at move %d", whiteMove, moveNumber),
+			})
+		}
+
+		// Validate black's move if present
+		if blackMove != "" && !v.isValidMoveNotation(blackMove) {
+			v.errors = append(v.errors, ValidationError{
+				Line:    lineNumber,
+				Message: fmt.Sprintf("Warning: Invalid move notation '%s' at move %d", blackMove, moveNumber),
+			})
+		}
+	}
+}
+
+// removeComments removes text in curly braces (comments)
+func (v *PGNValidator) removeComments(line string) string {
+	result := []rune{}
+	inComment := false
+
+	for _, char := range line {
+		if char == '{' {
+			inComment = true
+		} else if char == '}' {
+			inComment = false
+		} else if !inComment {
+			result = append(result, char)
+		}
+	}
+
+	return string(result)
+}
+
+// removeVariations removes text in parentheses (variations)
+func (v *PGNValidator) removeVariations(line string) string {
+	result := []rune{}
+	depth := 0
+
+	for _, char := range line {
+		if char == '(' {
+			depth++
+		} else if char == ')' {
+			if depth > 0 {
+				depth--
+			}
+		} else if depth == 0 {
+			result = append(result, char)
+		}
+	}
+
+	return string(result)
+}
+
+// isValidMoveNotation checks if a move follows correct PGN notation
+func (v *PGNValidator) isValidMoveNotation(move string) bool {
+	// Trim annotations like !, ?, !!, ??, !?, ?!
+	move = strings.TrimRight(move, "!?")
+
+	// Check for game result markers
+	if move == "1-0" || move == "0-1" || move == "1/2-1/2" || move == "*" {
+		return true
+	}
+
+	// Rimuove scacco e scacco matto prima di controllare castling
+	moveWithoutCheck := strings.TrimRight(move, "+#")
+
+	// Check for castling (with or without check/checkmate)
+	if moveWithoutCheck == "O-O" || moveWithoutCheck == "O-O-O" ||
+		moveWithoutCheck == "0-0" || moveWithoutCheck == "0-0-0" {
+		return true
+	}
+
+	// Pattern for valid moves:
+	// - Pieces: K, Q, R, B, N followed by coordinates
+	// - Pawns: only coordinates
+	// - Can contain: x (capture), = (promotion), + (check), # (checkmate)
+	// - Coordinates: a-h for files, 1-8 for ranks
+	// Remove check and checkmate at the end
+	move = strings.TrimRight(move, "+#")
+
+	// Pattern for promotion (ex: e8=Q)
+	promotionPattern := regexp.MustCompile(`^([a-h])?([a-h][1-8])=([QRBN])$`)
+	if promotionPattern.MatchString(move) {
+		return true
+	}
+
+	// Pattern for moves of pieces with disambiguation
+	// Es: Nbd7, N1c3, Qh4e1, Raxb1
+	piecePattern := regexp.MustCompile(`^([KQRBN])([a-h])?([1-8])?(x)?([a-h][1-8])$`)
+	if piecePattern.MatchString(move) {
+		matches := piecePattern.FindStringSubmatch(move)
+		if len(matches) > 1 {
+			piece := matches[1]
+			// Verify that the piece is valid
+			if piece == "K" || piece == "Q" || piece == "R" || piece == "B" || piece == "N" {
+				return true
+			}
+		}
+	}
+
+	// Pawn move patterns
+	// Ex: e4, exd5, e8
+	pawnPattern := regexp.MustCompile(`^([a-h])(x)?([a-h][1-8])$`)
+	if pawnPattern.MatchString(move) {
+		return true
+	}
+
+	// Simple pawn move patterns (only destination square)
+	// Ex: e4, d5, a6
+	simplePawnPattern := regexp.MustCompile(`^[a-h][1-8]$`)
+	if simplePawnPattern.MatchString(move) {
+		return true
+	}
+
+	// If the move does not match any valid pattern
+	return false
 }
 
 // checkProperNesting verifies that parentheses and braces are properly nested

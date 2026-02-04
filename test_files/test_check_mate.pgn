@@ -1,0 +1,9 @@
+[Event "Test Check and Checkmate"]
+[Site "Test"]
+[Date "2024.01.15"]
+[Round "1"]
+[White "Player1"]
+[Black "Player2"]
+[Result "1-0"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4 Bxb4 5. c3 Ba5 6. d4 exd4 7. O-O+ d6 8. cxd4 Bb6 9. Nc3 Na5 10. Bg5+ f6 11. exf6 Nxf6 12. Ba3 Bg4 13. Qb3 Qe7 14. Rae1 c6 15. Rxe7+ Kxe7 16. Re1+ Kd7 17. Qxb6 axb6 18. Rxg1 Kc8 19. Re8# 1-0

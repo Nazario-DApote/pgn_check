@@ -1,0 +1,9 @@
+[Event "Test Promotion"]
+[Site "Test"]
+[Date "2024.01.15"]
+[Round "1"]
+[White "Player1"]
+[Black "Player2"]
+[Result "1-0"]
+
+1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Nf6 5. Nc3 Bb4 6. Nxc6 bxc6 7. Bd3 d5 8. exd5 cxd5 9. O-O O-O 10. Bg5 c6 11. Qf3 Be7 12. Rfe1 Re8 13. Ne2 h6 14. Bh4 Nd7 15. Qg3 Bf8 16. Nd4 Nb6 17. Nf5 Bxf5 18. Bxf5 Nc4 19. b3 Ne5 20. Re3 Ng6 21. Bg3 Qd7 22. Rae1 Rxe3 23. Rxe3 Re8 24. Rxe8 Qxe8 25. Bxg6 fxg6 26. h3 Qe1+ 27. Kh2 Qe4 28. Qf3 Qxf3 29. gxf3 Bd6 30. Bxd6 cxd6 31. Kg3 Kf7 32. f4 Ke6 33. Kf3 d4 34. Ke4 d3 35. cxd3 g5 36. fxg5 hxg5 37. Kxd5 g4 38. hxg4 g6 39. g5 Kf5 40. Kxd6 Kxg5 41. Kxc6 Kf4 42. d4 Ke3 43. d5 Kd2 44. d6 Kc2 45. d7 Kxb3 46. d8=Q a5 47. Qd5+ Ka3 48. Kb5 Ka2 49. Qa8 Kb2 50. Qxa5 1-0
