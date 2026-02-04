@@ -1,0 +1,116 @@
+name: Build and Test - Linux
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Read version
+      id: version
+      run: |
+        VERSION=$(cat VERSION)
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Build binary with version
+      run: |
+        VERSION=$(cat VERSION)
+        go build -ldflags="-X main.Version=$VERSION -s -w" -o pgn_check
+        chmod +x pgn_check
+
+    - name: Verify version
+      run: |
+        ./pgn_check --version
+        echo "Binary built successfully"
+
+    - name: Run tests
+      run: |
+        echo "Running Go tests..."
+        go test -v ./...
+
+    - name: Run benchmarks
+      run: |
+        echo "Running performance benchmarks..."
+        chmod +x benchmark.sh
+        
+        # Create test output directory
+        mkdir -p benchmark_results
+        
+        # Run benchmark and save results
+        ./benchmark.sh > benchmark_results/benchmark_output.txt 2>&1 || true
+        
+        echo "Benchmark completed. Results:"
+        cat benchmark_results/benchmark_output.txt
+
+    - name: Create artifact directory
+      run: |
+        VERSION=$(cat VERSION)
+        ARTIFACT_NAME="pgn_check-linux-v${VERSION}"
+        mkdir -p "${ARTIFACT_NAME}"
+        
+        # Copy binary
+        cp pgn_check "${ARTIFACT_NAME}/"
+        
+        # Copy version file
+        cp VERSION "${ARTIFACT_NAME}/"
+        
+        # Create README for artifact
+        echo "PGN Check - Linux Build" > "${ARTIFACT_NAME}/README.txt"
+        echo "Version: ${VERSION}" >> "${ARTIFACT_NAME}/README.txt"
+        echo "Built: $(date)" >> "${ARTIFACT_NAME}/README.txt"
+        echo "Platform: Linux x86_64" >> "${ARTIFACT_NAME}/README.txt"
+        echo "" >> "${ARTIFACT_NAME}/README.txt"
+        echo "Usage:" >> "${ARTIFACT_NAME}/README.txt"
+        echo "  ./pgn_check <file.pgn>" >> "${ARTIFACT_NAME}/README.txt"
+        echo "  ./pgn_check -o output.pgn input.pgn" >> "${ARTIFACT_NAME}/README.txt"
+        echo "  ./pgn_check --version" >> "${ARTIFACT_NAME}/README.txt"
+        echo "" >> "${ARTIFACT_NAME}/README.txt"
+        echo "For more information, see the main repository." >> "${ARTIFACT_NAME}/README.txt"
+        
+        # Copy benchmark results if available
+        if [ -f benchmark_results/benchmark_output.txt ]; then
+          cp benchmark_results/benchmark_output.txt "${ARTIFACT_NAME}/"
+        fi
+        
+        # Create tarball
+        tar -czf "${ARTIFACT_NAME}.tar.gz" "${ARTIFACT_NAME}"
+        
+        echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pgn_check-linux-v${{ steps.version.outputs.VERSION }}
+        path: |
+          pgn_check-linux-v${{ steps.version.outputs.VERSION }}.tar.gz
+          pgn_check-linux-v${{ steps.version.outputs.VERSION }}/
+        retention-days: 90
+
+    - name: Display artifact info
+      run: |
+        VERSION=$(cat VERSION)
+        echo "================================"
+        echo "Build completed successfully!"
+        echo "================================"
+        echo "Version: $VERSION"
+        echo "Platform: Linux"
+        echo "Artifact: pgn_check-linux-v${VERSION}.tar.gz"
+        ls -lh pgn_check-linux-v${VERSION}.tar.gz

@@ -1,5 +1,8 @@
 # PGN Check - Validatore di File PGN
 
+[![Build Linux](https://github.com/YOUR_USERNAME/pgn_check/workflows/Build%20and%20Test%20-%20Linux/badge.svg)](https://github.com/YOUR_USERNAME/pgn_check/actions)
+[![Build Windows](https://github.com/YOUR_USERNAME/pgn_check/workflows/Build%20and%20Test%20-%20Windows/badge.svg)](https://github.com/YOUR_USERNAME/pgn_check/actions)
+
 Un tool da linea di comando scritto in Go per validare file PGN (Portable Game Notation) con particolare attenzione al formato delle date.
 
 ## Caratteristiche
@@ -14,12 +17,29 @@ Un tool da linea di comando scritto in Go per validare file PGN (Portable Game N
 
 ## Installazione
 
+### Da Release Binarie (Consigliato)
+
+Scarica l'ultima versione pre-compilata dalla [pagina Releases](https://github.com/YOUR_USERNAME/pgn_check/releases):
+- **Windows**: `pgn_check-windows-vX.X.X.zip`
+- **Linux**: `pgn_check-linux-vX.X.X.tar.gz`
+
+Estrai l'archivio e il binario è pronto all'uso!
+
+### Da Sorgente
+
 ```bash
+# Mostra versione
+pgn_check.exe --version
+
 # Clona il repository
 cd pgn_check
 
 # Compila il progetto
 go build -o pgn_check.exe
+
+# Oppure con versione incorporata
+VERSION=$(cat VERSION)
+go build -ldflags="-X main.Version=$VERSION" -o pgn_check.exe
 ```
 
 ## Utilizzo
@@ -175,16 +195,43 @@ Gli script mostrano:
 - Progresso per ogni file
 - Elenco degli errori e warning trovati
 - Riepilogo finale con conteggio file validi/invalidi
+### Test
+```bash
+# Esegui tutti i test
+go test -v ./...
 
-## Sviluppo
+# Test con coverage
+go test -cover ./...
+```
 
+### Build
 ```bash
 # Esegui il tool in modalità sviluppo
 go run . test_files\example_valid.pgn
 
-# Esegui i test (se presenti)
-go test ./...
+# Build standard
+go build -o pgn_check.exe
 
+# Build ottimizzata con versione
+VERSION=$(cat VERSION)
+go build -ldflags="-X main.Version=$VERSION -s -w" -o pgn_check.exe
+```
+
+### CI/CD Workflows
+
+Il progetto include GitHub Actions workflows per build e test automatici:
+
+- **build-linux.yml**: Compila, testa e crea artefatti per Linux
+- **build-windows.yml**: Compila, testa e crea artefatti per Windows
+
+Ogni workflow:
+1. Legge la versione dal file `VERSION`
+2. Compila il binario con la versione incorporata
+3. Esegue tutti i test Go
+4. Esegue i benchmark di performance
+5. Crea un artefatto con binario, versione e risultati benchmark
+
+Per aggiornare la versione, modifica semplicemente il file `VERSION`.
 # Build ottimizzata
 go build -ldflags="-s -w" -o pgn_check.exe
 ```

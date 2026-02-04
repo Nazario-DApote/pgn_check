@@ -7,16 +7,28 @@ import (
 	"os"
 )
 
+// Version is set at build time using ldflags
+var Version = "dev"
+
 func main() {
 	// Flag definitions
 	outputFile := flag.String("o", "", "Output file with corrections applied")
+	version := flag.Bool("version", false, "Show version information")
+	versionShort := flag.Bool("v", false, "Show version information")
 	flag.Parse()
+
+	// Show version if requested
+	if *version || *versionShort {
+		fmt.Printf("pgn_check version %s\n", Version)
+		os.Exit(0)
+	}
 
 	// Check arguments
 	if flag.NArg() < 1 {
-		fmt.Println("Usage: pgn_check [-o output.pgn] <file.pgn>")
+		fmt.Println("Usage: pgn_check [-o output.pgn] [-v|--version] <file.pgn>")
 		fmt.Println("Example: pgn_check game.pgn")
 		fmt.Println("         pgn_check -o corrected.pgn game.pgn")
+		fmt.Println("         pgn_check --version")
 		os.Exit(1)
 	}
 
