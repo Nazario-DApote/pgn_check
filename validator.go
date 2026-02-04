@@ -333,6 +333,49 @@ func (v *PGNValidator) checkProperNesting(line string, lineNumber int) bool {
 	return len(stack) == 0
 }
 
+// fixBalancedDelimiters attempts to fix unbalanced parentheses and braces in a line
+func (v *PGNValidator) fixBalancedDelimiters(line string) string {
+	result := []rune{}
+	stack := []rune{}
+
+	for _, char := range line {
+		switch char {
+		case '(', '{':
+			// Opening delimiter: add to result and push to stack
+			result = append(result, char)
+			stack = append(stack, char)
+		case ')':
+			// Closing parenthesis: check if there's a matching opening
+			if len(stack) > 0 && stack[len(stack)-1] == '(' {
+				result = append(result, char)
+				stack = stack[:len(stack)-1]
+			}
+			// If no matching opening, skip this closing parenthesis
+		case '}':
+			// Closing brace: check if there's a matching opening
+			if len(stack) > 0 && stack[len(stack)-1] == '{' {
+				result = append(result, char)
+				stack = stack[:len(stack)-1]
+			}
+			// If no matching opening, skip this closing brace
+		default:
+			result = append(result, char)
+		}
+	}
+
+	// Add missing closing delimiters at the end of the line
+	for i := len(stack) - 1; i >= 0; i-- {
+		switch stack[i] {
+		case '(':
+			result = append(result, ')')
+		case '{':
+			result = append(result, '}')
+		}
+	}
+
+	return string(result)
+}
+
 // WriteCorrectedFile reads the PGN file, applies corrections, and writes to output file
 func (v *PGNValidator) WriteCorrectedFile(inputFile, outputFile string) error {
 	// Open input file
@@ -375,15 +418,16 @@ func (v *PGNValidator) WriteCorrectedFile(inputFile, outputFile string) error {
 	defer writer.Flush()
 	bytesRead := int64(0)
 	lineCount := 0
+	inHeader := true
 
 	tagPattern := regexp.MustCompile(`^\[(\w+)\s+"(.*)"\]$`)
 
 	for scanner.Scan() {
 		lineCount++
 		line := scanner.Text()
-		bytesRead += int64(len(line)) + 2 // +2 per newline (\r\n su Windows)
+		bytesRead += int64(len(line)) + 2 // +2 for newline (\r\n on Windows)
 
-		// Aggiorna progress bar ogni 100 linee per migliori performance
+		// Update progress bar every 100 lines for better performance
 		if bar != nil && lineCount%100 == 0 {
 			bar.Set64(bytesRead)
 		}
@@ -392,6 +436,7 @@ func (v *PGNValidator) WriteCorrectedFile(inputFile, outputFile string) error {
 
 		// If it's a tag, check if corrections are needed
 		if strings.HasPrefix(strings.TrimSpace(line), "[") {
+			inHeader = true
 			matches := tagPattern.FindStringSubmatch(strings.TrimSpace(line))
 			if matches != nil {
 				tagName := matches[1]
@@ -406,6 +451,14 @@ func (v *PGNValidator) WriteCorrectedFile(inputFile, outputFile string) error {
 					}
 				}
 			}
+		} else if strings.TrimSpace(line) != "" && inHeader {
+			// First non-empty, non-tag line marks start of moves
+			inHeader = false
+		}
+
+		// Fix unbalanced parentheses and braces in move lines
+		if !inHeader && strings.TrimSpace(line) != "" {
+			correctedLine = v.fixBalancedDelimiters(correctedLine)
 		}
 
 		// Write line (corrected or original)
