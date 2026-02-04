@@ -12,21 +12,63 @@ import (
 
 // Pre-compiled regex patterns for better performance
 var (
-	tagPattern          = regexp.MustCompile(`^\[(\w+)\s+"(.*)"\]$`) // Pattern for PGN tags: [TagName "Value"]
-	correctDatePattern  = regexp.MustCompile(`^\d{4}\.\d{2}\.\d{2}$`)
-	wildcardDatePattern = regexp.MustCompile(`^\?{4}\.\?{2}\.\?{2}$`)
-	validMovePattern    = regexp.MustCompile(`^[a-zA-Z0-9\s\+\#\=\-\!\?\(\)\.\*\/\{\}]+$`)
-	movePattern         = regexp.MustCompile(`(\d+)\.\s*([^\s]+)(?:\s+([^\s]+))?`)
-	promotionPattern    = regexp.MustCompile(`^([a-h])?([a-h][1-8])=([QRBN])$`)
-	piecePattern        = regexp.MustCompile(`^([KQRBN])([a-h])?([1-8])?(x)?([a-h][1-8])$`)
-	pawnPattern         = regexp.MustCompile(`^([a-h])(x)?([a-h][1-8])$`)
-	simplePawnPattern   = regexp.MustCompile(`^[a-h][1-8]$`)
+	// tagPattern matches PGN tags in format [TagName "Value"]
+	// Groups: (1) tag name (word chars), (2) tag value (any chars)
+	tagPattern = regexp.MustCompile(`^\[(\w+)\s+"(.*)"\]$`)
 
-	// Date fixing patterns
-	datePatternISO      = regexp.MustCompile(`^(\d{4})-(\d{2})-(\d{2})$`)
+	// correctDatePattern matches dates in correct PGN format: YYYY.MM.DD
+	// Matches exactly 4 digits, dot, 2 digits, dot, 2 digits
+	correctDatePattern = regexp.MustCompile(`^\d{4}\.\d{2}\.\d{2}$`)
+
+	// wildcardDatePattern matches unknown dates in PGN format: ????.??.??
+	// Matches exactly 4 question marks, dot, 2 question marks, dot, 2 question marks
+	wildcardDatePattern = regexp.MustCompile(`^\?{4}\.\?{2}\.\?{2}$`)
+
+	// validMovePattern checks if line contains only valid PGN move characters
+	// Allows: letters, numbers, spaces, +#=-!?().*/{} (standard PGN notation)
+	validMovePattern = regexp.MustCompile(`^[a-zA-Z0-9\s\+\#\=\-\!\?\(\)\.\*\/\{\}]+$`)
+
+	// movePattern extracts move numbers and moves from PGN notation
+	// Groups: (1) move number, (2) white's move, (3) black's move (optional)
+	// Matches: "1. e4 e5" or "23. Nf3"
+	movePattern = regexp.MustCompile(`(\d+)\.\s*([^\s]+)(?:\s+([^\s]+))?`)
+
+	// promotionPattern matches pawn promotion moves
+	// Groups: (1) source file (optional for capture), (2) destination square, (3) promoted piece (Q/R/B/N)
+	// Matches: "e8=Q" or "exd8=R"
+	promotionPattern = regexp.MustCompile(`^([a-h])?([a-h][1-8])=([QRBN])$`)
+
+	// piecePattern matches piece moves with optional disambiguation
+	// Groups: (1) piece (K/Q/R/B/N), (2) source file (optional), (3) source rank (optional), (4) capture 'x' (optional), (5) destination
+	// Matches: "Nf3", "Nbd7", "R1a3", "Qh4e1", "Bxe5"
+	piecePattern = regexp.MustCompile(`^([KQRBN])([a-h])?([1-8])?(x)?([a-h][1-8])$`)
+
+	// pawnPattern matches pawn moves with captures
+	// Groups: (1) source file, (2) capture 'x' (optional), (3) destination square
+	// Matches: "e4", "exd5"
+	pawnPattern = regexp.MustCompile(`^([a-h])(x)?([a-h][1-8])$`)
+
+	// simplePawnPattern matches simple pawn moves (destination only)
+	// Matches: "e4", "d5", "a6" (file a-h, rank 1-8)
+	simplePawnPattern = regexp.MustCompile(`^[a-h][1-8]$`)
+
+	// Date fixing patterns - used to auto-correct common date formats to PGN standard
+
+	// datePatternISO matches ISO 8601 date format: YYYY-MM-DD
+	// Groups: (1) year (4 digits), (2) month (2 digits), (3) day (2 digits)
+	datePatternISO = regexp.MustCompile(`^(\d{4})-(\d{2})-(\d{2})$`)
+
+	// datePatternDDMMYYYY matches European date format: DD/MM/YYYY
+	// Groups: (1) day (2 digits), (2) month (2 digits), (3) year (4 digits)
 	datePatternDDMMYYYY = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d{4})$`)
+
+	// datePatternYYYYMMDD matches slash-separated date: YYYY/MM/DD
+	// Groups: (1) year (4 digits), (2) month (2 digits), (3) day (2 digits)
 	datePatternYYYYMMDD = regexp.MustCompile(`^(\d{4})/(\d{2})/(\d{2})$`)
-	datePatternNoSep    = regexp.MustCompile(`^(\d{4})(\d{2})(\d{2})$`)
+
+	// datePatternNoSep matches date without separators: YYYYMMDD
+	// Groups: (1) year (4 digits), (2) month (2 digits), (3) day (2 digits)
+	datePatternNoSep = regexp.MustCompile(`^(\d{4})(\d{2})(\d{2})$`)
 )
 
 // ValidationError represents a PGN validation error
