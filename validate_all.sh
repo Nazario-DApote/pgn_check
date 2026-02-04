@@ -62,11 +62,11 @@ while IFS= read -r file; do
     if [ "$auto_correct" = true ]; then
         # Validate and correct
         output_file="$output_dir/$filename"
-        ./pgn_check.exe -o "$output_file" "$file"
+        error_output=$(./pgn_check.exe -o "$output_file" "$file" 2>&1)
         result=$?
     else
         # Validate only
-        ./pgn_check.exe "$file"
+        error_output=$(./pgn_check.exe "$file" 2>&1)
         result=$?
     fi
     
@@ -76,6 +76,10 @@ while IFS= read -r file; do
     else
         ((invalid_count++))
         echo "  ✗ Errors found"
+        # Display errors and warnings if present
+        if echo "$error_output" | grep -qE "(Error:|Warning:)"; then
+            echo "$error_output" | grep -E "(Error:|Warning:|Line [0-9]+:)" | sed 's/^/    /'
+        fi
     fi
     echo ""
 done <<< "$pgn_files"

@@ -56,11 +56,11 @@ foreach ($file in $pgnFiles) {
     if ($autoCorrect) {
         # Validate and correct
         $outputFile = Join-Path $OutputDir $filename
-        $result = & .\pgn_check.exe -o $outputFile $file.FullName
+        $result = & .\pgn_check.exe -o $outputFile $file.FullName 2>&1
         $exitCode = $LASTEXITCODE
     } else {
         # Validate only
-        $result = & .\pgn_check.exe $file.FullName
+        $result = & .\pgn_check.exe $file.FullName 2>&1
         $exitCode = $LASTEXITCODE
     }
     
@@ -70,6 +70,17 @@ foreach ($file in $pgnFiles) {
     } else {
         $invalidCount++
         Write-Host "  ✗ Errors found" -ForegroundColor Yellow
+        # Display errors and warnings if available
+        if ($result) {
+            $errorLines = $result | Where-Object { $_ -match "(Error:|Warning:|Line \d+:)" }
+            foreach ($errLine in $errorLines) {
+                if ($errLine -match "Warning:") {
+                    Write-Host "    $errLine" -ForegroundColor Yellow
+                } else {
+                    Write-Host "    $errLine" -ForegroundColor Red
+                }
+            }
+        }
     }
     Write-Host ""
 }

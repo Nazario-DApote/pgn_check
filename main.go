@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 	"log"
+	"os"
 )
 
 func main() {
@@ -25,7 +25,6 @@ func main() {
 	// Check if file exists
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		log.Fatalf("Error: file '%s' not found\n", filename)
-		os.Exit(1)
 	}
 
 	// Validate PGN file
@@ -36,7 +35,6 @@ func main() {
 	if *outputFile != "" {
 		if err := validator.WriteCorrectedFile(filename, *outputFile); err != nil {
 			log.Fatalf("Error writing corrected file: %v\n", err)
-			os.Exit(1)
 		}
 		fmt.Printf("✓ Corrected file saved to: %s\n", *outputFile)
 	}
