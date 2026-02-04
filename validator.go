@@ -297,9 +297,10 @@ func (v *PGNValidator) validateMoves(line string, lineNumber int) {
 func (v *PGNValidator) checkBalancedDelimiters(line string, open, close rune) bool {
 	count := 0
 	for _, char := range line {
-		if char == open {
+		switch char {
+		case open:
 			count++
-		} else if char == close {
+		case close:
 			count--
 			if count < 0 {
 				return false // Closing delimiter before opening
