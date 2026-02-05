@@ -60,12 +60,12 @@ jobs:
         body: |
           ## PGN Check v${{ steps.version.outputs.VERSION }}
           
-          ### Binari disponibili per il download:
+          ### Available binaries for download:
           
           - **Linux (x86_64)**: `pgn_check-linux-v${{ steps.version.outputs.VERSION }}.tar.gz`
           - **Windows (x64)**: `pgn_check-windows-v${{ steps.version.outputs.VERSION }}.zip`
           
-          ### Installazione
+          ### Installation
           
           #### Linux:
           ```bash
@@ -75,11 +75,11 @@ jobs:
           ```
           
           #### Windows:
-          1. Estrai il file ZIP
-          2. Apri PowerShell nella cartella estratta
-          3. Esegui `.\pgn_check.exe --version`
+          1. Extract the ZIP file
+          2. Open PowerShell in the extracted folder
+          3. Run `.\pgn_check.exe --version`
           
-          ### Utilizzo
+          ### Usage
           ```bash
           # Linux
           ./pgn_check <file.pgn>
@@ -90,10 +90,10 @@ jobs:
           .\pgn_check.exe -o output.pgn input.pgn
           ```
           
-          ### Autore
-          Nazario D'Apote - nazario.dapote@gmail.com
+          ### Author
+          Nazario D'Apote - nazario [dot] dapote [at] gmail [dot] com
           
-          ### Licenza
+          ### License
           MIT License
         files: |
           ./artifacts/linux/*.tar.gz
