@@ -33,3 +33,4 @@ vendor/
 # Coverage
 *.coverprofile
 coverage.html
+/test_files/temp_output.pgn
