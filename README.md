@@ -1,7 +1,7 @@
 # PGN Check - PGN File Validator
 
-[![Build Linux](https://github.com/YOUR_USERNAME/pgn_check/workflows/Build%20and%20Test%20-%20Linux/badge.svg)](https://github.com/YOUR_USERNAME/pgn_check/actions)
-[![Build Windows](https://github.com/YOUR_USERNAME/pgn_check/workflows/Build%20and%20Test%20-%20Windows/badge.svg)](https://github.com/YOUR_USERNAME/pgn_check/actions)
+[![Build Linux](https://github.com/Nazario-DApote/pgn_check/workflows/Build%20and%20Test%20-%20Linux/badge.svg)](https://github.com/Nazario-DApote/pgn_check/actions)
+[![Build Windows](https://github.com/Nazario-DApote/pgn_check/workflows/Build%20and%20Test%20-%20Windows/badge.svg)](https://github.com/Nazario-DApote/pgn_check/actions)
 
 A command-line tool written in Go to validate PGN (Portable Game Notation) files with special attention to date format.
 
@@ -19,7 +19,7 @@ A command-line tool written in Go to validate PGN (Portable Game Notation) files
 
 ### From Binary Releases (Recommended)
 
-Download the latest pre-compiled version from the [Releases page](https://github.com/YOUR_USERNAME/pgn_check/releases):
+Download the latest pre-compiled version from the [Releases page](https://github.com/Nazario-DApote/pgn_check/releases):
 - **Windows**: `pgn_check-windows-vX.X.X.zip`
 - **Linux**: `pgn_check-linux-vX.X.X.tar.gz`
 
@@ -252,8 +252,8 @@ The repository includes example files in the `test_files/` folder:
 ## Author
 
 **Nazario D'Apote**
-- Email: nazario [dot] dapote [at] gmail [dot] com
-- GitHub: [@nazariodapote](https://github.com/nazariodapote)
+- Email: nazario [_d0t_] dapote [_at_] gmail [_d0t_] com
+- GitHub: [@Nazario-DApote](https://github.com/Nazario-DApote/)
 
 ## License
 

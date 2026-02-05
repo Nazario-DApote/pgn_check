@@ -92,7 +92,7 @@ jobs:
         echo "Platform: Linux x86_64" >> "${ARTIFACT_NAME}/README.txt"
         echo "" >> "${ARTIFACT_NAME}/README.txt"
         echo "Author: Nazario D'Apote" >> "${ARTIFACT_NAME}/README.txt"
-        echo "Email: nazario [dot] dapote [at] gmail [dot] com" >> "${ARTIFACT_NAME}/README.txt"
+        echo "Email: nazario [_d0t_] dapote [_at_] gmail [_d0t_] com" >> "${ARTIFACT_NAME}/README.txt"
         echo "License: MIT (see LICENSE file)" >> "${ARTIFACT_NAME}/README.txt"
         echo "" >> "${ARTIFACT_NAME}/README.txt"
         echo "Usage:" >> "${ARTIFACT_NAME}/README.txt"

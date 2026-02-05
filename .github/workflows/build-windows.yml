@@ -98,7 +98,7 @@ jobs:
         "Platform: Windows x64" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
         "" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
         "Author: Nazario D'Apote" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
-        "Email: nazario [dot] dapote [at] gmail [dot] com" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
+        "Email: nazario [_d0t_] dapote [_at_] gmail [_d0t_] com" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
         "License: MIT (see LICENSE file)" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
         "" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
         "Usage:" | Out-File -FilePath "$ARTIFACT_NAME\README.txt" -Encoding utf8 -Append
