@@ -40,9 +40,9 @@ var (
 	movePattern = regexp.MustCompile(`(\d+)\.\s*([^\s]+)(?:\s+([^\s]+))?`)
 
 	// promotionPattern matches pawn promotion moves
-	// Groups: (1) source file (optional for capture), (2) destination square, (3) promoted piece (Q/R/B/N)
+	// Groups: (1) source file (optional for capture), (2) capture 'x' (optional), (3) destination square, (4) promoted piece (Q/R/B/N)
 	// Matches: "e8=Q" or "exd8=R"
-	promotionPattern = regexp.MustCompile(`^([a-h])?([a-h][1-8])=([QRBN])$`)
+	promotionPattern = regexp.MustCompile(`^([a-h])?(x)?([a-h][1-8])=([QRBN])$`)
 
 	// piecePattern matches piece moves with optional disambiguation
 	// Groups: (1) piece (K/Q/R/B/N), (2) source file (optional), (3) source rank (optional), (4) capture 'x' (optional), (5) destination
