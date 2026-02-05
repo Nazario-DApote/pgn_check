@@ -1,18 +1,28 @@
 name: Build and Release
 
 on:
-  push:
-    tags:
-      - 'v*'
-    branches: [ main, master ]
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch da cui effettuare la build'
+        required: true
+        default: 'main'
+        type: string
+      version:
+        description: 'Versione della release (es: 1.0.0)'
+        required: true
+        type: string
 
 jobs:
   build-linux:
     uses: ./.github/workflows/build-linux.yml
+    with:
+      ref: ${{ inputs.branch }}
     
   build-windows:
     uses: ./.github/workflows/build-windows.yml
+    with:
+      ref: ${{ inputs.branch }}
 
   create-release:
     needs: [build-linux, build-windows]
@@ -23,13 +33,22 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
     
-    - name: Read version
+    - name: Update VERSION file
+      run: |
+        echo "${{ inputs.version }}" > VERSION
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add VERSION
+        git commit -m "Release v${{ inputs.version }}" || echo "No changes to commit"
+    
+    - name: Set version
       id: version
       run: |
-        VERSION=$(cat VERSION)
-        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-        echo "Building release for version: $VERSION"
+        echo "VERSION=${{ inputs.version }}" >> $GITHUB_OUTPUT
+        echo "Building release for version: ${{ inputs.version }}"
     
     - name: Download Linux artifact
       uses: actions/download-artifact@v4

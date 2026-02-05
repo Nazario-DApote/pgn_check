@@ -1,0 +1,37 @@
+name: CI - Build and Test
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  build-and-test-linux:
+    uses: ./.github/workflows/build-linux.yml
+    
+  build-and-test-windows:
+    uses: ./.github/workflows/build-windows.yml
+  
+  summary:
+    needs: [build-and-test-linux, build-and-test-windows]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Check build results
+      run: |
+        echo "================================"
+        echo "CI Build Summary"
+        echo "================================"
+        echo "Linux build: ${{ needs.build-and-test-linux.result }}"
+        echo "Windows build: ${{ needs.build-and-test-windows.result }}"
+        echo ""
+        
+        if [ "${{ needs.build-and-test-linux.result }}" = "success" ] && [ "${{ needs.build-and-test-windows.result }}" = "success" ]; then
+          echo "✅ All builds passed successfully!"
+          exit 0
+        else
+          echo "❌ Some builds failed!"
+          exit 1
+        fi

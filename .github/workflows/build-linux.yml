@@ -2,6 +2,11 @@ name: Build and Test - Linux
 
 on:
   workflow_call:
+    inputs:
+      ref:
+        description: 'Branch/tag/commit to checkout'
+        required: false
+        type: string
     outputs:
       artifact-name:
         description: "The name of the Linux artifact"
@@ -21,6 +26,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref || github.ref }}
 
     - name: Set up Go
       uses: actions/setup-go@v5
