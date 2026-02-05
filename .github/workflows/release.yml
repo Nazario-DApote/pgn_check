@@ -1,0 +1,111 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    uses: ./.github/workflows/build-linux.yml
+    
+  build-windows:
+    uses: ./.github/workflows/build-windows.yml
+
+  create-release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Read version
+      id: version
+      run: |
+        VERSION=$(cat VERSION)
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building release for version: $VERSION"
+    
+    - name: Download Linux artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: pgn_check-linux-v${{ needs.build-linux.outputs.version }}
+        path: ./artifacts/linux
+    
+    - name: Download Windows artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: pgn_check-windows-v${{ needs.build-windows.outputs.version }}
+        path: ./artifacts/windows
+    
+    - name: Display downloaded artifacts
+      run: |
+        echo "Downloaded artifacts:"
+        ls -R ./artifacts/
+    
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.version.outputs.VERSION }}
+        name: Release v${{ steps.version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        body: |
+          ## PGN Check v${{ steps.version.outputs.VERSION }}
+          
+          ### Binari disponibili per il download:
+          
+          - **Linux (x86_64)**: `pgn_check-linux-v${{ steps.version.outputs.VERSION }}.tar.gz`
+          - **Windows (x64)**: `pgn_check-windows-v${{ steps.version.outputs.VERSION }}.zip`
+          
+          ### Installazione
+          
+          #### Linux:
+          ```bash
+          tar -xzf pgn_check-linux-v${{ steps.version.outputs.VERSION }}.tar.gz
+          cd pgn_check-linux-v${{ steps.version.outputs.VERSION }}
+          ./pgn_check --version
+          ```
+          
+          #### Windows:
+          1. Estrai il file ZIP
+          2. Apri PowerShell nella cartella estratta
+          3. Esegui `.\pgn_check.exe --version`
+          
+          ### Utilizzo
+          ```bash
+          # Linux
+          ./pgn_check <file.pgn>
+          ./pgn_check -o output.pgn input.pgn
+          
+          # Windows
+          .\pgn_check.exe <file.pgn>
+          .\pgn_check.exe -o output.pgn input.pgn
+          ```
+          
+          ### Autore
+          Nazario D'Apote - nazario.dapote@gmail.com
+          
+          ### Licenza
+          MIT License
+        files: |
+          ./artifacts/linux/*.tar.gz
+          ./artifacts/windows/*.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Display release info
+      run: |
+        echo "================================"
+        echo "Release created successfully!"
+        echo "================================"
+        echo "Version: ${{ steps.version.outputs.VERSION }}"
+        echo "Tag: v${{ steps.version.outputs.VERSION }}"
+        echo "Release URL: ${{ steps.create_release.outputs.url }}"

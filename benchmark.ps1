@@ -76,7 +76,7 @@ function Test-FilePerformance {
     
     Write-Host ""
     
-    return @{
+    return [PSCustomObject]@{
         FileName = $fileName
         SizeMB = $fileSizeMB
         ValidationTime = $validationSeconds
@@ -164,13 +164,13 @@ if ($results.Count -gt 0) {
     Write-Host "=========================================" -ForegroundColor Cyan
     Write-Host ""
     
-    $results | Format-Table -Property `
-        @{Label="File"; Expression={$_.FileName}; Width=30}, `
-        @{Label="Size(MB)"; Expression={$_.SizeMB}; Width=10}, `
-        @{Label="Valid(s)"; Expression={$_.ValidationTime}; Width=10}, `
-        @{Label="Valid(MB/s)"; Expression={$_.ValidationSpeed}; Width=12}, `
-        @{Label="Corr(s)"; Expression={$_.CorrectionTime}; Width=10}, `
-        @{Label="Corr(MB/s)"; Expression={$_.CorrectionSpeed}; Width=12}
+    $results | Format-Table -AutoSize -Property `
+        @{Label="File"; Expression={$_.FileName}}, `
+        @{Label="Size(MB)"; Expression={$_.SizeMB}}, `
+        @{Label="Valid(s)"; Expression={$_.ValidationTime}}, `
+        @{Label="Valid(MB/s)"; Expression={$_.ValidationSpeed}}, `
+        @{Label="Corr(s)"; Expression={$_.CorrectionTime}}, `
+        @{Label="Corr(MB/s)"; Expression={$_.CorrectionSpeed}} | Out-String | Write-Host
 }
 
 Write-Host "Benchmark completed!" -ForegroundColor Green

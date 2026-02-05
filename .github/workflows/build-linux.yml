@@ -1,15 +1,22 @@
 name: Build and Test - Linux
 
 on:
-  push:
-    branches: [ main, master, develop ]
-  pull_request:
-    branches: [ main, master, develop ]
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: "The name of the Linux artifact"
+        value: ${{ jobs.build-linux.outputs.artifact-name }}
+      version:
+        description: "The version being built"
+        value: ${{ jobs.build-linux.outputs.version }}
   workflow_dispatch:
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    outputs:
+      artifact-name: ${{ steps.artifact-info.outputs.artifact-name }}
+      version: ${{ steps.version.outputs.VERSION }}
     
     steps:
     - name: Checkout code
@@ -61,10 +68,13 @@ jobs:
         cat benchmark_results/benchmark_output.txt
 
     - name: Create artifact directory
+      id: artifact-info
       run: |
         VERSION=$(cat VERSION)
         ARTIFACT_NAME="pgn_check-linux-v${VERSION}"
         mkdir -p "${ARTIFACT_NAME}"
+        
+        echo "artifact-name=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
         
         # Copy binary
         cp pgn_check "${ARTIFACT_NAME}/"

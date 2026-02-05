@@ -1,15 +1,22 @@
 name: Build and Test - Windows
 
 on:
-  push:
-    branches: [ main, master, develop ]
-  pull_request:
-    branches: [ main, master, develop ]
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: "The name of the Windows artifact"
+        value: ${{ jobs.build-windows.outputs.artifact-name }}
+      version:
+        description: "The version being built"
+        value: ${{ jobs.build-windows.outputs.version }}
   workflow_dispatch:
 
 jobs:
   build-windows:
     runs-on: windows-latest
+    outputs:
+      artifact-name: ${{ steps.artifact-info.outputs.artifact-name }}
+      version: ${{ steps.version.outputs.VERSION }}
     
     steps:
     - name: Checkout code
@@ -65,12 +72,15 @@ jobs:
         Get-Content benchmark_results\benchmark_output.txt
 
     - name: Create artifact directory
+      id: artifact-info
       shell: pwsh
       run: |
         $VERSION = (Get-Content VERSION).Trim()
         $ARTIFACT_NAME = "pgn_check-windows-v$VERSION"
         
         New-Item -ItemType Directory -Force -Path $ARTIFACT_NAME | Out-Null
+        
+        echo "artifact-name=$ARTIFACT_NAME" >> $env:GITHUB_OUTPUT
         
         # Copy binary
         Copy-Item pgn_check.exe "$ARTIFACT_NAME\"
